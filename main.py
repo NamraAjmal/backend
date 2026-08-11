@@ -10,23 +10,23 @@ taskList = [
 ]
 
 
-@app.get("/")
+@app.get("/", description="Basic Information")
 async def root():
     return {"name": "Task API", "version": "1.0", "endpoints": ["/tasks"]}
 
 
-@app.get("/health")
+@app.get("/health", description="Status check")
 async def health():
     return {"status": "ok"}
 
 
-@app.get("/tasks")
+@app.get("/tasks", description="Returns all tasks")
 async def tasks():
     if taskList:
         return taskList
 
 
-@app.get("/tasks/{id}")
+@app.get("/tasks/{id}", description="Returns task by ID")
 async def task(id: int):
     for task in taskList:
         if task["id"] == id:
@@ -35,7 +35,7 @@ async def task(id: int):
         raise HTTPException(status_code=404, detail="Task " + str(id) + " not found")
 
 
-@app.post("/tasks")
+@app.post("/tasks", description="Adds a task")
 async def create_task(task: dict):
     if "title" not in task or task["title"] == "":
         raise HTTPException(status_code=400, detail="Title does not exist")
@@ -49,7 +49,7 @@ async def create_task(task: dict):
     return JSONResponse(status_code=201, content=new_task)
 
 
-@app.put("/tasks/{id}")
+@app.put("/tasks/{id}", description="Updates task by ID")
 async def update_task(id: int, updatedtask: dict):
     if not updatedtask:
         return JSONResponse(status_code=400, content={"error": "Empty request"})
@@ -69,7 +69,7 @@ async def update_task(id: int, updatedtask: dict):
     return JSONResponse(status_code=404, content="Task does not exist")
 
 
-@app.delete("/tasks/{id}")
+@app.delete("/tasks/{id}", description="Deletes a task")
 async def delete_task(id: int):
     for task in taskList:
         if task["id"] == id:
