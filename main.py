@@ -1,7 +1,29 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse, Response
+import sqlite3
 
 app = FastAPI()
+
+
+def initialize_database():
+    connection = sqlite3.connect("tasks.db")
+    cursor = connection.cursor()
+    cursor.execute(""" CREATE TABLE IF NOT EXISTS tasks(
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        title TEXT NOT NULL,
+                        done INTEGER NOT NULL)""")
+    cursor.execute("SELECT COUNT(*) FROM tasks")
+    count = cursor.fetchone()[0]
+    if count == 0:
+        cursor.execute("INSERT INTO tasks (title,done) VALUES (?,?)", ("Buy Milk", 0))
+        cursor.execute("INSERT INTO tasks (title,done) VALUES (?,?)", ("Pray", 1))
+        cursor.execute("INSERT INTO tasks (title,done) VALUES (?,?)", ("Exercise", 0))
+        connection.commit()
+    connection.close()
+
+
+initialize_database()
+
 
 taskList = [
     {"id": 1, "title": "Buy Milk", "done": False},
