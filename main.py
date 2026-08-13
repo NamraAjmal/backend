@@ -44,15 +44,28 @@ async def health():
 
 @app.get("/tasks", description="Returns all tasks")
 async def tasks():
-    if taskList:
-        return taskList
+    connection = sqlite3.connect("tasks.db")
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM tasks")
+    rows = cursor.fetchall()
+    connection.close()
+    task_list = []
+    for row in rows:
+        task = {"id": row[0], "title": row[1], "done": bool(row[2])}
+        task_list.append(task)
+    return task_list
 
 
 @app.get("/tasks/{id}", description="Returns task by ID")
 async def task(id: int):
-    for task in taskList:
-        if task["id"] == id:
-            return task
+    connection = sqlite3.connect("tasks.db")
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM tasks WHERE id= ?", (id,))
+    row = cursor.fetchone()
+    connection.close()
+    if row:
+        task = {"id": row[0], "title": row[1], "done": bool(row[2])}
+        return task
     else:
         raise HTTPException(status_code=404, detail="Task " + str(id) + " not found")
 
