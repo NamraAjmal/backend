@@ -75,12 +75,12 @@ async def create_task(task: dict):
     if "title" not in task or task["title"] == "":
         raise HTTPException(status_code=400, detail="Title does not exist")
 
-    new_task = {
-        "id": max(task["id"] for task in taskList) + 1,
-        "title": task["title"],
-        "done": False,
-    }
-    taskList.append(new_task)
+    connection = sqlite3.connect("tasks.db")
+    cursor = connection.cursor()
+    cursor.execute("INSERT INTO tasks (title,done) VALUES (?,?)", (task["title"], 0))
+    connection.commit()
+    new_task = {"id": cursor.lastrowid, "title": task["title"], "done": False}
+    connection.close()
     return JSONResponse(status_code=201, content=new_task)
 
 
