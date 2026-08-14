@@ -25,13 +25,6 @@ def initialize_database():
 initialize_database()
 
 
-taskList = [
-    {"id": 1, "title": "Buy Milk", "done": False},
-    {"id": 2, "title": "Attend meeting", "done": True},
-    {"id": 3, "title": "Pray", "done": True},
-]
-
-
 @app.get("/", description="Basic Information")
 async def root():
     return {"name": "Task API", "version": "1.0", "endpoints": ["/tasks"]}
@@ -90,24 +83,44 @@ async def update_task(id: int, updatedtask: dict):
         return JSONResponse(status_code=400, content={"error": "Empty request"})
     if "title" not in updatedtask and "done" not in updatedtask:
         return JSONResponse(status_code=400, content={"error": "Invalid request"})
-    for task in taskList:
-        if task["id"] == id:
-            if "title" in updatedtask:
-                if updatedtask["title"] == "":
-                    return JSONResponse(status_code=400, content="Title can't be empty")
-                task["title"] = updatedtask["title"]
-            if "done" in updatedtask:
-                if not isinstance(updatedtask["done"], bool):
-                    return JSONResponse(status_code=400, content="Invalid request")
-                task["done"] = updatedtask["done"]
-            return JSONResponse(status_code=200, content=task)
-    return JSONResponse(status_code=404, content="Task does not exist")
+    connection = sqlite3.connect("tasks.db")
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM tasks where id=?", (id,))
+    row = cursor.fetchone()
+    if row is None:
+        return JSONResponse(status_code=404, content="Task does not exist")
+    new_title = row[1]
+    new_done = row[2]
+    if "title" in updatedtask:
+        if updatedtask["title"] == "":
+            return JSONResponse(status_code=400, content="Title can't be empty")
+        new_title = updatedtask["title"]
+    if "done" in updatedtask:
+        if not isinstance(updatedtask["done"], bool):
+            return JSONResponse(
+                status_code=400, content="Done can only be a boolean value"
+            )
+        new_done = updatedtask["done"]
+    cursor.execute(
+        "UPDATE tasks SET title=?, done=? WHERE id=?",
+        (new_title, new_done, id),
+    )
+    connection.commit()
+    connection.close()
+    new_task = {"id": id, "title": new_title, "done": bool(new_done)}
+    return JSONResponse(status_code=200, content=new_task)
 
 
 @app.delete("/tasks/{id}", description="Deletes a task")
 async def delete_task(id: int):
-    for task in taskList:
-        if task["id"] == id:
-            taskList.remove(task)
-            return Response(status_code=204)
-    return JSONResponse(status_code=404, content="Task does not exist")
+    connection = sqlite3.connect("tasks.db")
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM tasks where id=?", (id,))
+    row = cursor.fetchone()
+    if row is None:
+        connection.close()
+        return JSONResponse(status_code=404, content="Task does not exist")
+    cursor.execute("DELETE FROM tasks where id=?", (id,))
+    connection.commit()
+    connection.close()
+    return Response(status_code=204)
