@@ -1,8 +1,8 @@
 # Task API
 
-A simple REST API built with **Python and FastAPI** for managing tasks.
+A simple REST API built with **Python**, **FastAPI**, and **SQLite** for managing tasks.
 
-This project was built as part of the FlyRank Backend Internship Track and covers the fundamentals of building a CRUD API, including creating, reading, updating, and deleting tasks.
+This project was built as part of the FlyRank Backend Internship Track and demonstrates a complete CRUD API with persistent database storage.
 
 ## Features
 
@@ -11,6 +11,8 @@ This project was built as part of the FlyRank Backend Internship Track and cover
 - Get a single task by ID
 - Update a task
 - Delete a task
+- SQLite database persistence
+- Automatic database initialization and seeding
 - Input validation
 - Appropriate HTTP status codes
 - Interactive Swagger API documentation
@@ -19,7 +21,36 @@ This project was built as part of the FlyRank Backend Internship Track and cover
 
 - Python
 - FastAPI
+- SQLite
 - Uvicorn
+
+## Why SQLite?
+
+SQLite was chosen because:
+
+- It stores data in a single file (`tasks.db`)
+- It requires zero server setup
+- It is lightweight and easy to use
+- Data survives application restarts
+- Perfect for small projects and learning backend development
+
+## Database
+
+The application uses a SQLite database stored in:
+
+```text
+tasks.db
+```
+
+The database file is created automatically when the application starts if it does not already exist.
+
+On first startup, the application:
+
+1. Creates the `tasks` table
+2. Seeds three example tasks
+3. Starts serving requests immediately
+
+This means a new user can clone the repository and run the project without any manual database setup.
 
 ## Installation & Running
 
@@ -36,7 +67,7 @@ cd backend
 pip install fastapi uvicorn
 ```
 
-### 3. Run the server
+### 3. Start the server
 
 ```bash
 uvicorn main:app --reload
@@ -76,24 +107,31 @@ curl -i -X POST http://localhost:8000/tasks \
 -d '{"title":"Learn FastAPI"}'
 ```
 
-Example output:
+Example response:
 
-```text
-HTTP/1.1 201 Created
-content-type: application/json
-
-{"id":4,"title":"Learn FastAPI","done":false}
+```json
+{
+  "id": 4,
+  "title": "Learn FastAPI",
+  "done": false
+}
 ```
 
 ## Exploring SQLite
 
-Query:
+Example query used during database exploration:
 
-SELECT \* FROM tasks;
+```sql
+SELECT * FROM tasks;
+```
 
 Result:
-This query returned all tasks.
-![sample query](image.png)
+
+This query returned all tasks currently stored in the database.
+
+### SQLite Screenshot
+
+![SQLite Query](image.png)
 
 ## Swagger UI
 
@@ -117,18 +155,23 @@ Use the **Try it out** button to create, read, update, and delete tasks directly
 .
 ├── main.py
 ├── README.md
+├── tasks.db (generated automatically at runtime)
 ```
 
 ## Status Codes
 
-The API uses HTTP status codes to communicate the result of each request:
+The API uses HTTP status codes to communicate request results:
 
 - `200` — Request successful
 - `201` — Task successfully created
 - `204` — Task successfully deleted
-- `400` — Invalid or empty request
+- `400` — Invalid request
 - `404` — Task not found
 
 ## Project Status
 
-Complete CRUD API with interactive Swagger documentation.
+Complete CRUD API
+SQLite database integration
+Automatic database initialization
+Persistent storage across restarts
+Interactive Swagger documentation
