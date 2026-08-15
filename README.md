@@ -85,6 +85,16 @@ content-type: application/json
 {"id":4,"title":"Learn FastAPI","done":false}
 ```
 
+## Exploring SQLite
+
+Query:
+
+SELECT \* FROM tasks;
+
+Result:
+This query returned all tasks.
+![sample query](image.png)
+
 ## Swagger UI
 
 FastAPI automatically generates interactive API documentation using OpenAPI and Swagger UI.
