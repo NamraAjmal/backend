@@ -1,28 +1,19 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse, Response
 import sqlite3
+import psycopg
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set")
+
 
 app = FastAPI()
-
-
-def initialize_database():
-    connection = sqlite3.connect("tasks.db")
-    cursor = connection.cursor()
-    cursor.execute(""" CREATE TABLE IF NOT EXISTS tasks(
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        title TEXT NOT NULL,
-                        done INTEGER NOT NULL)""")
-    cursor.execute("SELECT COUNT(*) FROM tasks")
-    count = cursor.fetchone()[0]
-    if count == 0:
-        cursor.execute("INSERT INTO tasks (title,done) VALUES (?,?)", ("Buy Milk", 0))
-        cursor.execute("INSERT INTO tasks (title,done) VALUES (?,?)", ("Pray", 1))
-        cursor.execute("INSERT INTO tasks (title,done) VALUES (?,?)", ("Exercise", 0))
-        connection.commit()
-    connection.close()
-
-
-initialize_database()
 
 
 @app.get("/", description="Basic Information")
@@ -37,11 +28,10 @@ async def health():
 
 @app.get("/tasks", description="Returns all tasks")
 async def tasks():
-    connection = sqlite3.connect("tasks.db")
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM tasks")
-    rows = cursor.fetchall()
-    connection.close()
+    with psycopg.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM tasks")
+            rows = cur.fetchall()
     task_list = []
     for row in rows:
         task = {"id": row[0], "title": row[1], "done": bool(row[2])}
@@ -51,16 +41,15 @@ async def tasks():
 
 @app.get("/tasks/{id}", description="Returns task by ID")
 async def task(id: int):
-    connection = sqlite3.connect("tasks.db")
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM tasks WHERE id= ?", (id,))
-    row = cursor.fetchone()
-    connection.close()
+    with psycopg.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM tasks WHERE id=%s", (id,))
+            row = cur.fetchone()
     if row:
         task = {"id": row[0], "title": row[1], "done": bool(row[2])}
         return task
     else:
-        raise HTTPException(status_code=404, detail="Task " + str(id) + " not found")
+        return JSONResponse(status_code=404, content={"error": "Task not found"})
 
 
 @app.post("/tasks", description="Adds a task")
