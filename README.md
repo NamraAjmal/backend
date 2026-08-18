@@ -21,8 +21,15 @@ This project was built as part of the FlyRank Backend Internship Track and demon
 
 - Python
 - FastAPI
+- PostgreSQL
 - SQLite
 - Uvicorn
+
+## Start PostgreSQL
+
+```
+docker run --name taskdb -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=tasks -p 5432:5432 -v taskdata:/var/lib/postgresql -d postgres:18
+```
 
 ## Why SQLite?
 

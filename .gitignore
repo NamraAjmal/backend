@@ -7,6 +7,8 @@ wheels/
 *.egg-info
 
 # Virtual environments
+.env
+.env.example
 .venv
 
 tasks.db
