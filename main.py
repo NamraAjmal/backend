@@ -18,7 +18,7 @@ app = FastAPI()
 
 @app.get("/", description="Basic Information")
 async def root():
-    return {"name": "Task API", "version": "1.0", "endpoints": ["/tasks"]}
+    return {"message": "Server running and connected to database"}
 
 
 @app.get("/health", description="Status check")
