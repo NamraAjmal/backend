@@ -1,8 +1,8 @@
 # Task API
 
-A simple REST API built with **Python**, **FastAPI**, and **SQLite** for managing tasks.
+A simple REST API built with **Python**, **FastAPI**, and **PostgreSQL** for managing tasks.
 
-This project was built as part of the FlyRank Backend Internship Track and demonstrates a complete CRUD API with persistent database storage.
+This project was built as part of the **FlyRank Backend Internship Track** and demonstrates a complete CRUD API with persistent database storage and a Docker Compose setup.
 
 ## Features
 
@@ -11,53 +11,54 @@ This project was built as part of the FlyRank Backend Internship Track and demon
 - Get a single task by ID
 - Update a task
 - Delete a task
-- SQLite database persistence
+- PostgreSQL database persistence
 - Automatic database initialization and seeding
+- Persistent database storage using a Docker volume
 - Input validation
 - Appropriate HTTP status codes
 - Interactive Swagger API documentation
+- One-command application and database startup
 
 ## Tech Stack
 
 - Python
 - FastAPI
 - PostgreSQL
-- SQLite
+- Psycopg
 - Uvicorn
+- Docker
+- Docker Compose
+- uv
 
-## Start PostgreSQL
+## Environment Variables
 
+The application uses a `.env` file for environment configuration.
+
+Copy the example file before starting:
+
+```bash
+cp .env.example .env
 ```
-docker run --name taskdb -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=tasks -p 5432:5432 -v taskdata:/var/lib/postgresql -d postgres:18
+
+The `.env.example` file contains the required variables:
+
+```text
+DATABASE_URL=postgres://postgres:dev@db:5432/tasks
 ```
 
-## Why SQLite?
-
-SQLite was chosen because:
-
-- It stores data in a single file (`tasks.db`)
-- It requires zero server setup
-- It is lightweight and easy to use
-- Data survives application restarts
-- Perfect for small projects and learning backend development
+The `.env` file is git-ignored and should not be committed.
 
 ## Database
 
-The application uses a SQLite database stored in:
+The application uses a PostgreSQL database managed by Docker Compose.
 
-```text
-tasks.db
-```
+On startup, the application:
 
-The database file is created automatically when the application starts if it does not already exist.
+1. Creates the `tasks` table if it does not exist
+2. Seeds three example tasks if the table is empty
+3. Starts serving requests
 
-On first startup, the application:
-
-1. Creates the `tasks` table
-2. Seeds three example tasks
-3. Starts serving requests immediately
-
-This means a new user can clone the repository and run the project without any manual database setup.
+The database data is stored in a Docker volume named `taskdata`, allowing data to survive container restarts.
 
 ## Installation & Running
 
@@ -68,29 +69,37 @@ git clone https://github.com/NamraAjmal/backend.git
 cd backend
 ```
 
-### 2. Install dependencies
+### 2. Create the environment file
 
 ```bash
-pip install fastapi uvicorn
+cp .env.example .env
 ```
 
-### 3. Start the server
+### 3. Start the complete stack
 
 ```bash
-uvicorn main:app --reload
+docker compose up
+```
+
+For a fresh image build:
+
+```bash
+docker compose up --build
 ```
 
 The API will be available at:
 
 ```text
-http://localhost:8000
+http://localhost:3000
 ```
 
 Swagger UI is available at:
 
 ```text
-http://localhost:8000/docs
+http://localhost:3000/docs
 ```
+
+No manual database setup is required.
 
 ## API Endpoints
 
@@ -109,7 +118,7 @@ http://localhost:8000/docs
 Create a task:
 
 ```bash
-curl -i -X POST http://localhost:8000/tasks \
+curl -i -X POST http://localhost:3000/tasks \
 -H "Content-Type: application/json" \
 -d '{"title":"Learn FastAPI"}'
 ```
@@ -124,21 +133,25 @@ Example response:
 }
 ```
 
-## Exploring SQLite
+## Database Verification
 
-Example query used during database exploration:
+PostgreSQL can be inspected using `psql` or a PostgreSQL GUI such as DBeaver, pgAdmin, or TablePlus.
+
+List the tables:
+
+```sql
+\dt
+```
+
+View the stored tasks:
 
 ```sql
 SELECT * FROM tasks;
 ```
 
-Result:
+### PostgreSQL Screenshot
 
-This query returned all tasks currently stored in the database.
-
-### SQLite Screenshot
-
-![SQLite Query](image.png)
+![PostgreSQL Query](image.png)
 
 ## Swagger UI
 
@@ -147,7 +160,7 @@ FastAPI automatically generates interactive API documentation using OpenAPI and 
 Open:
 
 ```text
-http://localhost:8000/docs
+http://localhost:3000/docs
 ```
 
 Use the **Try it out** button to create, read, update, and delete tasks directly from the browser.
@@ -161,9 +174,30 @@ Use the **Try it out** button to create, read, update, and delete tasks directly
 ```text
 .
 ├── main.py
-├── README.md
-├── tasks.db (generated automatically at runtime)
+├── database.py
+├── Dockerfile
+├── compose.yaml
+├── pyproject.toml
+├── uv.lock
+├── .env.example
+├── .gitignore
+└── README.md
 ```
+
+## Persistence
+
+Database data is stored in the Docker `taskdata` volume.
+
+To verify persistence:
+
+```bash
+docker compose down
+docker compose up
+```
+
+Tasks created before the restart should still be available.
+
+> Do not use `docker compose down -v` when testing persistence because it removes the database volume.
 
 ## Status Codes
 
@@ -174,11 +208,14 @@ The API uses HTTP status codes to communicate request results:
 - `204` — Task successfully deleted
 - `400` — Invalid request
 - `404` — Task not found
+- `422` — Request validation error
 
 ## Project Status
 
-Complete CRUD API
-SQLite database integration
-Automatic database initialization
-Persistent storage across restarts
-Interactive Swagger documentation
+- Complete CRUD API
+- PostgreSQL database integration
+- Automatic database initialization
+- Persistent storage across restarts
+- Docker Compose full-stack setup
+- One-command startup
+- Interactive Swagger documentation
