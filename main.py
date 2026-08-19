@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse, Response
 import psycopg
 import os
 from dotenv import load_dotenv
+import database
 
 load_dotenv()
 
