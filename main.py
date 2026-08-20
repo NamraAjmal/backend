@@ -4,6 +4,7 @@ import psycopg
 import os
 from dotenv import load_dotenv
 import database
+from routes.auth import router
 
 load_dotenv()
 
@@ -14,6 +15,7 @@ if not DATABASE_URL:
 
 
 app = FastAPI()
+app.include_router(router, prefix="/auth")
 
 
 @app.get("/", description="Basic Information")
