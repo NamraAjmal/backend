@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.responses import JSONResponse, Response
 import psycopg
 import os
@@ -16,6 +16,24 @@ if not DATABASE_URL:
 
 app = FastAPI()
 app.include_router(router, prefix="/auth")
+
+
+@app.get("/public/info")
+async def public_info():
+    return JSONResponse(
+        status_code=200, content={"message": "Welcome stranger! This info is public"}
+    )
+
+
+@app.get("/protected/profile")
+async def protected_info(authorization: str | None = Header(default=None)):
+    if not authorization:
+        return JSONResponse(status_code=401, content={"error": "Access token required"})
+    parts = authorization.split()
+    if len(parts) != 2 or parts[0] != "Bearer" or not parts[1]:
+        return JSONResponse(status_code=401, content={"error": "Access token required"})
+    token = parts[1]
+    return {"message": "You have passed the gate"}
 
 
 @app.get("/", description="Basic Information")
