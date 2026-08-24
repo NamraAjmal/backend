@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import JSONResponse, Response
 import psycopg
 import os
@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import database
 from routes.auth import router
 from supabase_client import supabase
+from routes.protected import get_current_user
 
 load_dotenv()
 
@@ -27,24 +28,17 @@ async def public_info():
 
 
 @app.get("/protected/profile")
-async def protected_info(authorization: str | None = Header(default=None)):
-    if not authorization:
-        return JSONResponse(status_code=401, content={"error": "Access token required"})
-    parts = authorization.split()
-    if len(parts) != 2 or parts[0] != "Bearer" or not parts[1]:
-        return JSONResponse(status_code=401, content={"error": "Access token required"})
-    token = parts[1]
+async def protected_info(user=Depends(get_current_user)):
+    return {
+        "id": user.id,
+        "email": user.email,
+        "created_at": user.created_at,
+    }
 
-    try:
-        response = supabase.auth.get_user(token)
-        return {
-            "id": response.user.id,
-            "email": response.user.email,
-            "created_at": response.user.created_at,
-        }
-    except Exception as e:
-        print(f"Error occurred: {e}")
-        return JSONResponse(status_code=401, content={"error": "Invalid access token"})
+
+@app.get("/protected/dashboard")
+async def dashboard(user=Depends(get_current_user)):
+    return {"message": "Welcome to Dashboard"}
 
 
 @app.get("/", description="Basic Information")

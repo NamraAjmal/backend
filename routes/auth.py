@@ -1,7 +1,8 @@
 from pydantic import BaseModel
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from supabase_client import supabase
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
+from routes.protected import get_current_user
 
 router = APIRouter()
 
@@ -41,3 +42,9 @@ async def login(data: AuthRequest):
         return JSONResponse(
             status_code=401, content={"error": "Invalid login credentials"}
         )
+
+
+@router.post("/logout")
+async def logout(user=Depends(get_current_user)):
+    supabase.auth.sign_out()
+    return Response(status_code=204)
