@@ -168,6 +168,7 @@ Use the **Try it out** button to create, read, update, and delete tasks directly
 ### Swagger Screenshot
 
 ![Swagger UI](Screenshot_11-8-2026_18146_127.0.0.1.jpeg)
+![/docs showing lock icon](image-1.png)
 
 ## Project Structure
 
