@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+from datetime import datetime, timezone
 
 URL = "http://books.toscrape.com/"
 
@@ -27,7 +28,6 @@ def get_page(url, cache_file):
         raise RuntimeError(f"Failed to fetch with status code {response.status_code}")
 
     cache_file.parent.mkdir(parents=True, exist_ok=True)
-
     cache_file.write_text(response.text, encoding="utf-8")
 
     print(f"Response size: {len(response.content)} bytes")
@@ -35,9 +35,45 @@ def get_page(url, cache_file):
     return response.text
 
 
+def extract_book(html, product_url, source_page):
+    soup = BeautifulSoup(html, "html.parser")
+
+    product = soup.select_one("article.product_page")
+
+    title = product.select_one("h1")
+    price = product.select_one(".price_color")
+    availability = product.select_one(".availability")
+    rating = product.select_one(".star-rating")
+    description = product.select_one("#product_description + p")
+
+    rating_text = None
+    if rating:
+        rating_text = next(
+            (
+                class_name
+                for class_name in rating.get("class", [])
+                if class_name != "star-rating"
+            ),
+            None,
+        )
+
+    return {
+        "title": title.get_text(strip=True) if title else None,
+        "product_url": product_url,
+        "price_text": price.get_text(strip=True) if price else None,
+        "availability_text": (
+            availability.get_text(" ", strip=True) if availability else None
+        ),
+        "rating_text": rating_text,
+        "description": description.get_text(strip=True) if description else None,
+        "source_page": source_page,
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 def main():
     current_url = URL
-    discovered_books = set()
+    discovered_books = {}
 
     for page_number in range(1, 4):
         print(f"\nCatalogue page {page_number}")
@@ -57,7 +93,7 @@ def main():
 
             book_url = urljoin(current_url, href)
 
-            discovered_books.add(book_url)
+            discovered_books[book_url] = current_url
 
         next_link = soup.select_one("li.next a")
 
@@ -70,6 +106,25 @@ def main():
 
     print(f"\ncatalogue_pages={page_number}")
     print(f"discovered={len(discovered_books)}")
+
+    records = []
+
+    for index, (book_url, source_page) in enumerate(discovered_books.items(), start=1):
+        print(f"\nBook {index}/{len(discovered_books)}")
+
+        cache_file = Path(f"cache/books/{index}.html")
+
+        html = get_page(book_url, cache_file)
+
+        record = extract_book(html, book_url, source_page)
+
+        records.append(record)
+
+    print("\nRAW RECORD:")
+    print(records[0])
+
+    print(f"\nunique_urls={len(discovered_books)}")
+    print(f"records={len(records)}")
 
 
 if __name__ == "__main__":
