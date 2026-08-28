@@ -1,15 +1,29 @@
 import requests
 import time
+import json
 from pathlib import Path
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from datetime import datetime, timezone
+from pydantic import BaseModel
 
-URL = "http://books.toscrape.com/"
+URL = "https://books.toscrape.com/"
 
 HEADERS = {
     "User-Agent": "FlyRankInternship A9/1.0 (+https://github.com/NamraAjmal/backend)"
 }
+
+
+class Book(BaseModel):
+    title: str
+    product_url: str
+    price_text: str
+    price_gbp: float
+    availability_text: str
+    rating_text: str
+    description: str | None
+    source_page: str
+    fetched_at: str
 
 
 def get_page(url, cache_file):
@@ -120,11 +134,44 @@ def main():
 
         records.append(record)
 
-    print("\nRAW RECORD:")
-    print(records[0])
+    good_records = []
+    errors = []
+    seen_urls = set()
+
+    for record in records:
+        try:
+            price_gbp = float(
+                record["price_text"].replace("£", "").replace("Â", "").strip()
+            )
+
+            record["price_gbp"] = price_gbp
+
+            book = Book.model_validate(record)
+
+            if book.product_url in seen_urls:
+                continue
+
+            seen_urls.add(book.product_url)
+
+            good_records.append(book.model_dump())
+
+        except Exception as error:
+            errors.append({"record": record, "reason": str(error)})
+
+    output_dir = Path("output")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    (output_dir / "books.json").write_text(
+        json.dumps(good_records, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+    (output_dir / "errors.json").write_text(
+        json.dumps(errors, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
     print(f"\nunique_urls={len(discovered_books)}")
-    print(f"records={len(records)}")
+    print(f"valid_records={len(good_records)}")
+    print(f"errors={len(errors)}")
 
 
 if __name__ == "__main__":
